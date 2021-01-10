@@ -1,3 +1,5 @@
 __pycache__/
-OUTPUT/
+Music/
+.idea/
+*.json
 *.txt

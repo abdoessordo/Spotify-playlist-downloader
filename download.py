@@ -1,35 +1,33 @@
 import youtube_dl
 
-with open('../URLS.txt', 'r') as f:
-	urls = [line.strip() for line in f]
 
-
-def downlaod(video_url):
+def downlaod(video, foldername='OUTPUT/'):
+	video_url = video['url']
 	video_info = youtube_dl.YoutubeDL().extract_info(
 		url=video_url, download=False
 		)
-	filename = f"{video_info['title']}.mp3"
-	print(video_info['webpage_url'])
+
+	song_name = f"{video_info['title']}.mp3"
+	if '/' in song_name:
+		song_name = song_name.replace('/', '-')
+	filename = f"{foldername}/{song_name}"
 	options = {
-		'format' : 'bestaudio/best',
-		'keepvideo' : False,
-		'outtmpl' : filename,
+		'format': 'bestaudio/best',
+		'keepvideo': False,
+		'outtmpl': filename,
 		'postprocessors': [{
-	        'key': 'FFmpegExtractAudio',
-	        'preferredcodec': 'mp3',
-	        'preferredquality': '192',
-        }] 
+			'key': 'FFmpegExtractAudio',
+			'preferredcodec': 'mp3',
+			'preferredquality': '192',
+		}]
 	}
 
 	with youtube_dl.YoutubeDL(options) as ydl:
-		ydl.download([video_url])
-
+		try:
+			ydl.download([video_url])
+		except:
+			pass
 
 
 if __name__ == '__main__':
-	print(len(urls))
-	for url in urls:
-		try:
-			downlaod(url)
-		except:
-			pass
+	pass

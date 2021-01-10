@@ -1,42 +1,70 @@
 from __future__ import unicode_literals
 from main import SpotifyAPI, CLIENT_ID, CLIENT_SECRET, playlist_id
-from time import sleep
 import webbrowser
-import youtube_dl
 from googleapiclient.discovery import build
+import json
 
 
+# -------------------------------------------------------
+COUNT = 0
 
-#-------------------------------------------------------
-songs = []
+with open('./songs.json', 'r') as f:
+	DATA = json.load(f)
 
-URLS = []
+api_key = ['AIzaSyCBKLRJZF30akVFf3qFoMLhPZZxcSA-II8', 'AIzaSyCxjOXVUvEk-OgrknmdVAC7HJWjYeCHwxQ', 'AIzaSyDlZ1NC0qkLZ0Etiq7qlm5rRDvtpz4YVHw']
 
-url = 'https://www.youtube.com/watch?v=RHQC4fAhcbU'
+# ------------------------------------------------------
 
-api_key = ['AIzaSyDlZ1NC0qkLZ0Etiq7qlm5rRDvtpz4YVHw', 'AIzaSyCBKLRJZF30akVFf3qFoMLhPZZxcSA-II8', 'AIzaSyCxjOXVUvEk-OgrknmdVAC7HJWjYeCHwxQ']
 
-ytb = build('youtube', 'v3', developerKey=api_key[2])
-#-------------------------------------------------------
 def get_songs():
-	global songs
 	spotify = SpotifyAPI(CLIENT_ID, CLIENT_SECRET)
 	spotify.refrech_token()
 	spotify.search_playlist(playlist_id)
-	with open('./songs.txt', 'r') as f:
-		songs = [line.strip() for line in f]
+
+	with open('./songs.json', 'r') as f:
+		songs = json.load(f)
+	return songs
 
 
-def get_url(song_name):
+def get_song_url(song):
+	ytb = build('youtube', 'v3', developerKey=api_key[COUNT])
+	song_name = song['song_name']
+	artist_name = song['artist_name']
+
 	request = ytb.search().list(
-	        part="snippet",
-	        maxResults=1,
-	        q= song_name
-	    )
+		part="snippet",
+		maxResults=1,
+		q= f'{song_name} {artist_name}'
+	)
 	response = request.execute()
 	videoId = response['items'][0]['id']['videoId']
 	song_url = f'https://www.youtube.com/watch?v={videoId}'
-	return song_url
+	return {'song_name': song_name, 'artist_name': artist_name, 'url': song_url}
+
+
+def add_urls():
+	global COUNT
+	songs = get_songs()
+	temps = []
+	while COUNT < 3:
+		for song in songs[COUNT*100:(COUNT+1)*100]:
+			print(song['song_name'])
+			try:
+				song_data = get_song_url(song)
+				temps.append(song_data)
+				print(song_data['url'])
+			except:
+				print("ERROR 404")
+		COUNT += 1
+
+	with open('./songs.json', 'w') as f :
+		json.dump(temps, f, indent=4)
+
+	return temps
+
+
+def get_songs_data():
+	songs = get_songs()
 
 
 def open_on_browser(song):
@@ -44,51 +72,15 @@ def open_on_browser(song):
 	webbrowser.get(chrome_path).open(song)
 
 
-def open_all():
-	for song in URLS[197:]:
+def open_all(count):
+	URLS = [song['url'] for song in DATA]
+	for url in URLS[count*50: (count+1)*50]:
 		try:
-			open_on_browser(song)
+			open_on_browser(url)
 		except:
-			print('song')
+			print(url)
 
 
-def download_song(song_url):
-	ydl_opts = {
-	    'format': 'bestaudio/best',
-	    'postprocessors': [{
-	        'key': 'FFmpegExtractAudio',
-	        'preferredcodec': 'mp3',
-	        'preferredquality': '192',
-	    }],
-	}
-	youtube = youtube_dl.YoutubeDL(ydl_opts)
-	youtube.download([song_url])
-
-
-def add_URL():
-	tesmpURLS = []
-	for song in songs[205:]:
-		try:
-			url = get_url(song)
-			tesmpURLS.append(url)
-		except:print(song, "Didnt work")
-
-	with open('URLS.txt', 'a') as f :
-		f.write('\n')
-		for url in tesmpURLS:
-			if not tesmpURLS.index(url) == len(tesmpURLS) -1 :
-				f.write(f'{url}\n')
-			else : f.write(url) 
-
-
-def get_URLS():
-	global URLS
-	with open('./URLS.txt', 'r') as f:
-		URLS = [line.strip() for line in f]
-
-# if __name__ == '__main__':
-
-
-
-
-
+if __name__ == '__main__':
+	# add_urls()
+	open_all(4)

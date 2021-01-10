@@ -3,7 +3,6 @@ import base64
 import datetime
 from urllib.parse import urlencode
 import json
-import os
 
 CLIENT_ID = "5604f608bd3d4d4eb45d99673914efdf"
 CLIENT_SECRET = "031818f773294a03b94752980da7bebf"
@@ -74,8 +73,6 @@ class SpotifyAPI(object):
         print(lookup_url)
         # r = requests.get(lookup_url)
 
-
-
     def get_Acces(self):
         token_url = self.token_url
         token_data = self.get_token_data()
@@ -105,50 +102,51 @@ class SpotifyAPI(object):
         # print(r.json())
         self.access_token = r.json()['access_token']
 
-
-    def search(self):
-        access_token = self.access_token
-        headers = {
-            "Authorization" : f"Bearer {access_token}"
-        }
-        endpoint = "https://api.spotify.com/v1/search"
-        data = urlencode({"q": "favourites", "type": "playlist"})
-        print(data)
-        lookup_url = f"{endpoint}?{data}"
-        r = requests.get(lookup_url, headers = headers)
-        print(r.json())
-        return
+    # def search(self):
+    #     access_token = self.access_token
+    #     headers = {
+    #         "Authorization" : f"Bearer {access_token}"
+    #     }
+    #     endpoint = "https://api.spotify.com/v1/search"
+    #     data = urlencode({"q": "favourites", "type": "playlist"})
+    #     print(data)
+    #     lookup_url = f"{endpoint}?{data}"
+    #     r = requests.get(lookup_url, headers = headers)
+    #     print(r.json())
+    #     return
 
     def search_playlist(self, playlist_id):
         access_token = self.access_token
         headers = {
             "Authorization" : f"Bearer {access_token}"
         }
+        songs = []
         count = 0
-        while count<3:
-            songs = []
-            data = urlencode({'offset':count*100})
+        while count < 3:
+            data = urlencode({'offset': count*100})
             endpoint = f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks?{data}"
-            r = requests.get(endpoint, headers = headers)
-            # print(r.json())
-            result = r.json()['items']
-            songs = [song['track']['name'] for song in result]
-            playlist.extend(songs)
+            r = requests.get(endpoint, headers=headers)
+            results = r.json()['items']
+            for song in results:
+                artists = [artist['name'] for artist in song['track']['artists']]
+                result = {'song_name': song['track']['name'],
+                          'artist_name': ", ".join(artists)
+                          }
+                songs.append(result)
             count +=1
-        with open('./songs.txt', 'w') as f:
-            for song in playlist:
-                if not playlist.index(song) == len(playlist) -1 :
-                    f.write(song + '\n')
-                else : f.write(song) 
+
+        with open('./songs.json', 'w') as f:
+            json.dump(songs, f, indent=4)
 
 
-    def get_my_playlists(self):
-        access_token = self.access_token
-        headers = {
-            "Authorization" : f"Bearer {access_token}"
-        }
-        endpoint = f"https://api.spotify.com/v1/me/playlists"
-        r = requests.get(endpoint, headers = headers)
+
+    # def get_my_playlists(self):
+    #     access_token = self.access_token
+    #     headers = {
+    #         "Authorization" : f"Bearer {access_token}"
+    #     }
+    #     endpoint = f"https://api.spotify.com/v1/me/playlists"
+    #     r = requests.get(endpoint, headers = headers)
 
 
 if __name__ == '__main__':
